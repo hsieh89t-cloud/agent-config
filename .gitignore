@@ -1,0 +1,31 @@
+# Logs and temp
+logs/
+tmp/
+cache/
+**/*.log
+
+# Memory and heartbeat
+**/memory/**
+**/HEARTBEAT.md
+
+# Secrets and credentials
+.env
+*token*
+*secret*
+credentials*
+**/secrets/**
+*.key
+*.pem
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OpenClaw internal
+.openclaw/
