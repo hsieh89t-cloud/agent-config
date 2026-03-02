@@ -1,8 +1,39 @@
+# 安全排除 (global overrides live in ~/.gitignore_global)
+# Environment & secrets
+.env
+.env.*
+*.env
+*.env.*
+.envrc
 
-# 安全排除
+# Keys & credentials
 keys/
 config/keys/
 *.key
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
 *.token
+*token*
+*.secret
 *secret*
+credentials*
+creds*
 
+# Local config snapshots
+openclaw.json
+.openclaw/
+config/deepseek_config.json
+config/keys/secure_keys.json
+config/.env
+
+# Runtime artifacts
+*.log
+*.bak
+*.tmp
+*.swp
+memory/
+HEARTBEAT.md
