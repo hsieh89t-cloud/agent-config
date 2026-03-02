@@ -1,0 +1,8 @@
+
+# 安全排除
+keys/
+config/keys/
+*.key
+*.token
+*secret*
+
