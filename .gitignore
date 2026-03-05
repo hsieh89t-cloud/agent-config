@@ -1,18 +1,11 @@
-# secrets / tokens
-.env
-*.key
-*.pem
-*.p12
-*token*
-*secret*
-credentials*
-**/secrets/**
-
-# runtime noise
 logs/
 tmp/
 cache/
 **/*.log
-**/HEARTBEAT.md
 **/memory/**
-**/.DS_Store
+**/HEARTBEAT.md
+.env
+*token*
+*secret*
+credentials*
+**/secrets/**
