@@ -1,4 +1,4 @@
-Agent: 蝦蝦
+Agent: 智研
 Mode: Autonomous Task Agent
 Active Skills:
 - adaptive-reasoning

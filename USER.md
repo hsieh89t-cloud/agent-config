@@ -1,17 +1,12 @@
-# USER.md - About Your Human
+# USER.md
 
-_Learn about the person you're helping. Update this as you go._
-
-- **Name:**
-- **What to call them:**
-- **Pronouns:** _(optional)_
-- **Timezone:**
+- **Name:** 小育
+- **What to call them:** 小育
+- **Pronouns:**
+- **Timezone:** Asia/Taipei (UTC+8)
 - **Notes:**
 
 ## Context
 
-_(What do they care about? What projects are they working on? What annoys them? What makes them laugh? Build this over time.)_
-
----
-
-The more you know, the better you can help. But remember — you're learning about a person, not building a dossier. Respect the difference.
+- 主要目標：建構 autonomous AI agents、scalable AI systems、intelligent knowledge platforms、advanced automation workflows
+- 偏好：結構化、工程導向、低廢話、可執行的解法
