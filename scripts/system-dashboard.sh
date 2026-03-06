@@ -14,59 +14,48 @@ status_zh() {
   esac
 }
 
-get_cmd() {
-  command -v "$1" >/dev/null 2>&1
-}
-
 while true; do
   clear
-  echo "================= 電腦健康總覽儀表板 ================="
-  echo "現在時間：$(date '+%Y-%m-%d %H:%M:%S %Z')"
-  echo
 
-  echo "【主機總覽】"
-  echo "- 主機名稱：$(hostname)"
-  echo "- 系統版本：$(grep '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2- | tr -d '"')"
-  echo "- 核心版本：$(uname -r)"
-  echo "- 開機時長：$(uptime -p 2>/dev/null || true)"
-  echo
+  host_name="$(hostname)"
+  os_name="$(grep '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2- | tr -d '"')"
+  kernel_ver="$(uname -r)"
+  up_time="$(uptime -p 2>/dev/null || echo '-')"
+  ip_addr="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
-  echo "【資源健康】"
-  echo "- CPU 平均負載：$(uptime | sed 's/.*load average: //')"
-  echo "- 記憶體使用量：$(free -h | awk '/Mem:/ {print $3" / "$2"（可用 "$7"）"}')"
-  echo "- Swap 使用量 ：$(free -h | awk '/Swap:/ {print $3" / "$2}')"
-  echo "- 磁碟使用量(/)：$(df -h / | awk 'NR==2 {print $3" / "$2"（已用 "$5"）"}')"
-  echo
+  cpu_load="$(uptime | sed 's/.*load average: //')"
+  mem_line="$(free -h | awk '/Mem:/ {print $3" / "$2"（可用 "$7"）"}')"
+  swap_line="$(free -h | awk '/Swap:/ {print $3" / "$2}')"
+  disk_root="$(df -h / | awk 'NR==2 {print $3" / "$2"（已用 "$5"）"}')"
 
-  echo "【磁碟健康（空間前5）】"
-  df -h | awk 'NR==1 || /^\/dev\// {print}' | head -n 6
-  echo
+  ollama_state="$(systemctl is-active ollama 2>/dev/null || echo unknown)"
+  gateway_state="$(systemctl --user is-active openclaw-gateway 2>/dev/null || echo unknown)"
+  ollama_pid="$(systemctl show -p MainPID --value ollama 2>/dev/null || echo -)"
+  gateway_pid="$(systemctl --user show -p MainPID --value openclaw-gateway 2>/dev/null || echo -)"
 
-  echo "【網路與連線】"
-  echo "- 內網 IP：$(hostname -I 2>/dev/null | awk '{print $1}')"
-  if get_cmd ss; then
-    echo "- 監聽中的 TCP 埠（前10筆）："
-    ss -ltn 2>/dev/null | sed -n '1,11p'
-  else
-    echo "- 無 ss 指令可顯示埠資訊"
-  fi
-  echo
+  ports_summary="$(ss -ltn 2>/dev/null | awk 'NR>1 {split($4,a,":"); p=a[length(a)]; if(p!="") c[p]++} END {n=0; for (k in c) {printf "%s%s", (n?", ":""), k; n++; if(n>=8) break} if(n==0) printf "無"}')"
 
-  echo "【關鍵服務狀態】"
-  OLLAMA_STATE_RAW=$(systemctl is-active ollama 2>/dev/null || echo unknown)
-  GW_STATE_RAW=$(systemctl --user is-active openclaw-gateway 2>/dev/null || echo unknown)
-  OLLAMA_PID=$(systemctl show -p MainPID --value ollama 2>/dev/null || echo -)
-  GW_PID=$(systemctl --user show -p MainPID --value openclaw-gateway 2>/dev/null || echo -)
-  echo "- Ollama 服務       ：$(status_zh "$OLLAMA_STATE_RAW")（PID：$OLLAMA_PID）"
-  echo "- OpenClaw Gateway  ：$(status_zh "$GW_STATE_RAW")（PID：$GW_PID）"
+  echo "================= 電腦健康總覽（精簡）================="
+  echo "時間：$(date '+%Y-%m-%d %H:%M:%S %Z')"
+  echo "主機：$host_name | IP：${ip_addr:--}"
+  echo "系統：$os_name"
+  echo "核心：$kernel_ver | 開機時長：$up_time"
   echo
-
-  echo "【高資源程序（CPU 前5）】"
-  ps -eo pid,comm,%cpu,%mem --sort=-%cpu | sed -n '1,6p'
+  echo "【資源】"
+  echo "CPU 負載：$cpu_load"
+  echo "記憶體：$mem_line"
+  echo "Swap：$swap_line"
+  echo "磁碟 / ：$disk_root"
   echo
-
+  echo "【服務】"
+  echo "Ollama：$(status_zh "$ollama_state")（PID: $ollama_pid）"
+  echo "OpenClaw Gateway：$(status_zh "$gateway_state")（PID: $gateway_pid）"
   echo
-  echo "------------------------------------------------------"
-  echo "每 ${refresh_seconds} 秒自動更新；按 Ctrl + C 離開"
+  echo "【監聽埠（前8）】${ports_summary}"
+  echo
+  echo "【CPU 前3 程序】"
+  ps -eo comm,%cpu,%mem --sort=-%cpu | sed -n '2,4p' | awk '{printf "- %-20s CPU:%5s%% MEM:%5s%%\n", $1, $2, $3}'
+  echo
+  echo "每 ${refresh_seconds} 秒更新｜Ctrl+C 離開"
   sleep "$refresh_seconds"
 done
