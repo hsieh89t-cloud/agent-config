@@ -2,6 +2,7 @@
 set -u
 
 refresh_seconds="${1:-3}"
+paused=0
 
 status_zh() {
   case "$1" in
@@ -56,6 +57,25 @@ while true; do
   echo "【CPU 前3 程序】"
   ps -eo comm,%cpu,%mem --sort=-%cpu | sed -n '2,4p' | awk '{printf "- %-20s CPU:%5s%% MEM:%5s%%\n", $1, $2, $3}'
   echo
-  echo "每 ${refresh_seconds} 秒更新｜Ctrl+C 離開"
-  sleep "$refresh_seconds"
+
+  if [[ "$paused" -eq 1 ]]; then
+    echo "狀態：已暫停更新（按 p 繼續｜q 離開）"
+    read -rsn1 key
+  else
+    echo "每 ${refresh_seconds} 秒更新｜p 暫停｜q 離開"
+    read -rsn1 -t "$refresh_seconds" key || key=""
+  fi
+
+  case "$key" in
+    p|P)
+      if [[ "$paused" -eq 1 ]]; then
+        paused=0
+      else
+        paused=1
+      fi
+      ;;
+    q|Q)
+      break
+      ;;
+  esac
 done
