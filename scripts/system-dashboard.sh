@@ -65,15 +65,6 @@ while true; do
   ps -eo pid,comm,%cpu,%mem --sort=-%cpu | sed -n '1,6p'
   echo
 
-  echo "【OpenClaw 最近日誌（最後 6 行）】"
-  log_file=$(ls -1t /tmp/openclaw/openclaw-*.log 2>/dev/null | head -n 1)
-  if [[ -n "${log_file:-}" ]]; then
-    echo "日誌檔案：$log_file"
-    tail -n 6 "$log_file"
-  else
-    echo "（找不到 /tmp/openclaw/openclaw-*.log）"
-  fi
-
   echo
   echo "------------------------------------------------------"
   echo "每 ${refresh_seconds} 秒自動更新；按 Ctrl + C 離開"
