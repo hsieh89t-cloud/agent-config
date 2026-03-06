@@ -561,12 +561,15 @@ class BatchProcessor:
         logger.info("  步驟1: 模型生成核心欄位...")
         core_fields = self.model_client.generate_core_fields(law, article_no, text)
         
-        # 如果模型失敗，使用規則引擎
+        model_failed = False
+
+        # 如果模型失敗，使用規則引擎（但不再複製條文原文）
         if not core_fields:
-            logger.warning("  模型生成失敗，使用規則引擎回退")
+            logger.warning("  模型生成失敗，使用規則引擎回退（白話摘要留空待重跑）")
             self.stats["model_failures"] += 1
+            model_failed = True
             core_fields = {
-                "白話摘要": text[:80] + "..." if len(text) > 80 else text,
+                "白話摘要": "",
                 "規範功能": self.rule_engine.classify_norm_function(text),
                 "關鍵字": self.rule_engine.extract_keywords(text)
             }
@@ -616,6 +619,9 @@ class BatchProcessor:
         
         # 記錄處理結果
         if full_output:
+            # 需重跑旗標：模型失敗或摘要品質未過
+            needs_regen = model_failed or (not plain_ok)
+            full_output["needs_regen"] = "1" if needs_regen else "0"
             full_output["_quality_issues"] = "; ".join(quality_issues) if quality_issues else ""
             full_output["_processed_at"] = datetime.now().isoformat()
             self.stats["success"] += 1
@@ -926,7 +932,7 @@ class BatchProcessor:
             'Unique_ID', '法規', '條號', '條文原文', '條文原文SHA256', '白話摘要',
             '規範功能', '法理與制度目的', '核心要件', '法律效果',
             '適用情境', '實務爭點', '關鍵字', '法律主題',
-            '關聯條文', 'RAG檢索句', '_quality_issues', '_processed_at'
+            '關聯條文', 'RAG檢索句', 'needs_regen', '_quality_issues', '_processed_at'
         ]
         
         # 添加其他欄位
