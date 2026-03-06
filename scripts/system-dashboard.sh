@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -u
 
-更新秒數="${1:-3}"
+refresh_seconds="${1:-3}"
 
-狀態中文() {
+status_zh() {
   case "$1" in
     active) echo "運行中" ;;
     inactive) echo "未運行" ;;
@@ -26,8 +26,8 @@ while true; do
   OLLAMA_PID=$(systemctl show -p MainPID --value ollama 2>/dev/null || echo -)
   GW_PID=$(systemctl --user show -p MainPID --value openclaw-gateway 2>/dev/null || echo -)
 
-  OLLAMA_STATE=$(狀態中文 "$OLLAMA_STATE_RAW")
-  GW_STATE=$(狀態中文 "$GW_STATE_RAW")
+  OLLAMA_STATE=$(status_zh "$OLLAMA_STATE_RAW")
+  GW_STATE=$(status_zh "$GW_STATE_RAW")
 
   echo "- Ollama 服務        ：${OLLAMA_STATE}（PID：${OLLAMA_PID}）"
   echo "- OpenClaw Gateway   ：${GW_STATE}（PID：${GW_PID}）"
@@ -54,6 +54,6 @@ while true; do
 
   echo
   echo "--------------------------------------------------"
-  echo "每 ${更新秒數} 秒自動更新；按 Ctrl + C 離開"
-  sleep "$更新秒數"
+  echo "每 ${refresh_seconds} 秒自動更新；按 Ctrl + C 離開"
+  sleep "$refresh_seconds"
 done
