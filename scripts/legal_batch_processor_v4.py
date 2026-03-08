@@ -33,7 +33,9 @@ class ConservativeModelClient:
     
     def __init__(self, base_url: str = "http://127.0.0.1:11434"):
         self.base_url = base_url
-        self.model = "qwen3.5:9b-4k"
+        # 優先使用 deepseek-r1:7b，若不存在則回退到 qwen3.5:9b
+        self.model = "deepseek-r1:7b"
+        self.fallback_model = "qwen3.5:9b"
         self.max_retries = 3
         self.timeout = 180  # 3分鐘
     
@@ -46,9 +48,9 @@ class ConservativeModelClient:
                     "prompt": prompt,
                     "stream": False,
                     "options": {
-                        "temperature": 0.2,  # 更低溫度以提高穩定性
-                        "top_p": 0.8,
-                        "num_predict": 384,  # 較短輸出
+                        "temperature": 0.7,  # 提高溫度以增加多樣性，避免空回應
+                        "top_p": 0.9,
+                        "num_predict": 512,  # 適中輸出長度
                     }
                 }
                 
@@ -92,39 +94,17 @@ class ConservativeModelClient:
     def generate_core_fields(self, law: str, article: str, text: str) -> Optional[Dict[str, str]]:
         """生成核心欄位：白話摘要、規範功能、關鍵字"""
         
-        # 極簡提示，確保模型能處理
-        system_prompt = """你是一個法律條文分析助手。請根據輸入的法條生成以下三個欄位：
-1. 白話摘要：用日常語言解釋條文，禁止複製原文
-2. 規範功能：選擇最合適的分類
-3. 關鍵字：提取3-5個核心術語
-
-請嚴格按照以下格式輸出：
-白話摘要：[解釋]
-規範功能：[分類]
-關鍵字：[詞1 詞2 詞3]"""
+        # 簡化提示，避免嚴格格式要求
+        system_prompt = """請用日常語言解釋法律條文，不要複製原文。然後告訴我這條文屬於哪種功能分類，以及列出幾個關鍵詞。"""
         
-        # 分類說明（在系統提示中）
-        func_categories = [
-            "原則/宣示性規範",
-            "定義條", 
-            "構成要件條",
-            "法律效果條",
-            "程序/救濟條",
-            "組織/權限條",
-            "例外/限制條",
-            "授權/準用條"
-        ]
-        
-        user_prompt = f"""請分析以下法條：
-
-法規：{law}
+        user_prompt = f"""法規：{law}
 條號：{article}
 條文原文：{text}
 
-請生成：
-白話摘要：（用日常語言解釋）
-規範功能：（從上述分類中選擇）
-關鍵字：（3-5個核心術語）"""
+請幫我：
+1. 用白話解釋這條法律在說什麼（不要抄原文）
+2. 告訴我這屬於哪種規範功能
+3. 列出3-5個關鍵詞"""
         
         response = self.generate_with_retry(user_prompt, system_prompt)
         if not response:
@@ -134,13 +114,14 @@ class ConservativeModelClient:
         return self._parse_response(response)
     
     def _parse_response(self, text: str) -> Dict[str, str]:
-        """解析模型回應"""
+        """解析模型回應（支援自由格式）"""
         result = {
             "白話摘要": "",
             "規範功能": "",
             "關鍵字": ""
         }
         
+        # 先嘗試嚴格格式匹配
         lines = text.split('\n')
         
         for line in lines:
@@ -160,6 +141,39 @@ class ConservativeModelClient:
             elif line.startswith("關鍵字") and (":" in line or "：" in line):
                 sep = ":" if ":" in line else "："
                 result["關鍵字"] = line.split(sep, 1)[1].strip()
+        
+        # 如果沒有找到嚴格格式，嘗試自由解析
+        if not result["白話摘要"]:
+            # 尋找可能包含解釋的句子
+            sentences = text.replace('\n', '。').split('。')
+            for sent in sentences:
+                if len(sent) > 10 and ('解釋' in sent or '意思是' in sent or '指' in sent):
+                    result["白話摘要"] = sent.strip()
+                    break
+            if not result["白話摘要"] and len(sentences) > 0:
+                # 使用第一個句子作為白話摘要
+                result["白話摘要"] = sentences[0].strip()
+        
+        if not result["規範功能"]:
+            # 嘗試從文本中識別分類關鍵詞
+            norm_keywords = [
+                "原則/宣示性規範", "定義條", "構成要件條", "法律效果條",
+                "程序/救濟條", "組織/權限條", "例外/限制條", "授權/準用條"
+            ]
+            for kw in norm_keywords:
+                if kw in text:
+                    result["規範功能"] = kw
+                    break
+        
+        if not result["關鍵字"]:
+            # 嘗試提取看起來像關鍵詞的詞語（2-4字）
+            import re
+            words = re.findall(r'[\u4e00-\u9fff]{2,4}', text)
+            # 移除常見虛詞
+            stopwords = ['可以', '應當', '如果', '但是', '以及', '或者', '然後']
+            keywords = [w for w in words if w not in stopwords][:5]
+            if keywords:
+                result["關鍵字"] = ' '.join(keywords)
         
         return result
 
