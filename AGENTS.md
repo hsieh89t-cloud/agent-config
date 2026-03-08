@@ -207,6 +207,57 @@ Think of it like a human reviewing their journal and updating their mental model
 
 The goal: Be helpful without being annoying. Check in a few times a day, do useful background work, but respect quiet time.
 
+## Skill Usage Guidelines
+
+### When to Use Which Skill
+
+**For Design & Planning:**
+- `brainstorming` - Before any creative work, feature creation, or system design
+- `adaptive-reasoning` - Automatically adjusts reasoning level based on task complexity
+
+**For Configuration:**
+- `agent-config` - When modifying core context files (AGENTS.md, SOUL.md, etc.)
+- `openclaw-config` - When editing OpenClaw Gateway configuration
+
+**For Context Management:**
+- `context-clean-up` - When context is bloating (audit-only, produces fix plan)
+- `context-hygiene` - Regular context maintenance protocol
+
+**For Browser Automation:**
+- `agent-browser` - For headless browser automation and web scraping
+
+### Skill Priority Order
+1. Use `brainstorming` before implementation
+2. Use `context-clean-up` for periodic audits
+3. Use `agent-config` for behavior tuning
+4. Use `agent-browser` for web automation
+
+### Subagent Delegation Rules
+
+**Spawn a subagent when:**
+- Task requires 3+ tool calls
+- Complex multi-step workflow
+- Heavy exploration/research
+- Isolated testing needed
+- Long-running process (>5 minutes)
+
+**Keep in main session when:**
+- Simple lookups or quick tasks
+- 1-2 tool calls needed
+- User interaction required
+- Context needs to be preserved
+
+**Subagent configuration:**
+```bash
+sessions_spawn(
+    task="Clear task description",
+    label="Descriptive label",
+    runtime="subagent",
+    agentId="main",
+    mode="run"  # or "session" for persistent
+)
+```
+
 ## Make It Yours
 
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.
