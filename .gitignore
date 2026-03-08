@@ -8,4 +8,32 @@ cache/
 *token*
 *secret*
 credentials*
-**/secrets/**
+**/secrets/
+
+# 臨時檔案和測試腳本
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# 開發環境檔案
+.clawhub/
+.openclaw/
+*.swp
+*.swo
+*~
+
+# 測試和實驗檔案
+test_*
+quick_test*
+validate_*
+setup_*
+demo_*
+實驗*
+測試*
+
+# 特定目錄
+00_初始資料收集/
+90_模板/**
